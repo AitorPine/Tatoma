@@ -1,62 +1,184 @@
-Qué hace
+API Reference - Tatoma Manufacturing Planner
 
-Plano de la nave: cada puesto muestra su nombre, los operarios, un punto de estado (verde activa, rojo parada, naranja mantenimiento) y una barra en perspectiva dividida por pedidos. La escala de la barra se ajusta al máximo de carga de la semana. La marca negra es la capacidad, y el borde pasa de verde a ámbar a partir del 80 % y a rojo por encima del 100 %.
-Navegación semanal: con ◀ ▶ o con una tira de 36 semanas coloreada por ocupación, para ver de un vistazo qué semanas se complican.
-Ajuste de capacidad: el botón «Ajustar capacidad» resta horas por vacaciones, bajas o averías en una semana y un área concretas.
-Pedidos: el formulario evalúa un pedido nuevo. La soldadura se reparte en las semanas previas, la pintura en las dos anteriores y el montaje en la semana de entrega. Si no cabe, indica semana y área del cuello de botella. Propone retrasar la entrega, partir el lote o cubrir con horas extra, y el botón «Aplicar» recalcula al instante.
-Administrador: «Editar plano» permite fijar columnas y filas de la nave, crear puestos pulsando «+» y editar cada uno (área, estado, operarios, turnos, horas por turno, tamaño). La pestaña «Equipo» añade trabajadores y los asigna a un puesto.
-Planificador: puede gestionar pedidos y ajustar capacidad, pero no editar el plano.
+Base URL: /api/v1
 
-Lo que falta
+Autenticación: JWT Bearer Token (Authorization: Bearer <token>)
 
-La importación directa del Excel.
-Las vacaciones individuales por operario y las unidades por turno de pintura.
-Las habilitaciones por línea de soldadura: ahora la carga se reparte entre las líneas de forma proporcional.
-Los flujos de trabajo editables.
-Los datos están solo en localStorage, sin backend.
-Endpoints que necesita el backend
+1. Autenticación
 
-Prefijo /api/v1, con JWT en Authorization: Bearer.
+POST /auth/login
 
-Autenticación
+Body: { "email": "...", "password": "..." }
 
-POST /auth/login: devuelve el token y el usuario con su rol.
-POST /auth/refresh y POST /auth/logout.
-GET /me.
+Response (200): Devuelve JWT y objeto de usuario { "token": "...", "user": { "id": 1, "role": "admin" } }
 
-Usuarios y trabajadores (administrador)
+POST /auth/refresh
 
-GET/POST /users y PATCH/DELETE /users/:id, con el rol admin, planner o viewer.
-GET/POST /workers y PATCH/DELETE /workers/:id, con puesto y habilidades.
-PUT /workers/:id/absences: vacaciones y bajas por semanas.
+Response (200): Nuevo JWT.
 
-Planta y puestos (administrador)
+POST /auth/logout
 
-GET /plants/:id y PUT /plants/:id/layout, que guarda las dimensiones del grid y la posición de los puestos.
-GET/POST /stations y PATCH/DELETE /stations/:id, con campos como area, x, y, w, h, workers, shifts, hoursPerShift, unitsPerShift y status.
-PUT /stations/:id/skills: los trabajos que puede hacer cada línea.
-GET/PUT /areas: las áreas.
-GET/PUT /workflow: el flujo de fases, por ejemplo soldadura → pintura → montaje.
+Response (200): Invalida sesión actual.
 
-Capacidad y disponibilidad
+GET /me
 
-GET /capacity?from=&to=: capacidad por semana, área y puesto.
-GET/PUT /capacity/adjustments: ajustes por semana, área o puesto, con motivo (vacaciones, baja o averia).
-PATCH /stations/:id/status: estado actual o programado.
+Response (200): Datos del usuario autenticado.
 
-Pedidos
+2. Usuarios y Trabajadores (Admin / Planner)
 
-GET/POST /orders y GET/PATCH/DELETE /orders/:id, con cantidad, entrega, horas por unidad, plazo previo y cliente.
-POST /orders/import: sube el Excel y valida las filas.
-POST /orders/:id/confirm.
+GET /users | POST /users
 
-Motor de cálculo
+Gestión de usuarios del sistema. Roles: admin, planner, viewer.
 
-POST /simulations/evaluate: recibe un pedido borrador y devuelve la viabilidad, los conflictos con semana y área, y las sugerencias.
-POST /simulations/apply: aplica una sugerencia elegida.
+PATCH /users/:id | DELETE /users/:id
 
-Visualización
+GET /workers | POST /workers
 
-GET /plant-status?week=2026-W08: estaciones con carga, capacidad, porcentaje y segmentos por pedido. Es lo que alimenta el plano, y conviene devolverlo ya calculado desde el servidor.
-GET /heatmap?from=&to=: la tira semanal.
-WS /ws/plant: avisos en tiempo real cuando cambia el estado de un puesto.
+Gestión de operarios físicos en planta.
+
+Atributos clave: name, station_id (puesto asignado), skills (ej. ["tig_welding", "mig_welding"]).
+
+PATCH /workers/:id | DELETE /workers/:id
+
+PUT /workers/:id/absences
+
+Descripción: Configura vacaciones y bajas por semanas (afecta al recálculo de capacidad).
+
+Body: [ { "week": "2026-W08", "type": "vacation|sick_leave" } ]
+
+3. Planta, Áreas y Puestos (Estaciones)
+
+GET /plants/:id
+
+Devuelve configuración general de la planta.
+
+PUT /plants/:id/layout
+
+Body: { "grid": { "cols": 20, "rows": 15 }, "stations_layout": [ { "station_id": 1, "x": 2, "y": 4 } ] }
+
+GET /stations | POST /stations
+
+Body (POST): { "name": "Soldadura 1", "area": "soldadura", "x": 0, "y": 0, "w": 2, "h": 2, "workers": 2, "shifts": 1, "hoursPerShift": 8, "unitsPerShift": null, "status": "active" }
+
+PATCH /stations/:id | DELETE /stations/:id
+
+PUT /stations/:id/skills
+
+Body: { "allowed_skills": ["heavy_welding"] } (Para restringir qué trabajos entran en esta línea).
+
+GET /areas | PUT /areas
+
+Gestiona las áreas principales (soldadura, pintura, montaje).
+
+GET /workflow | PUT /workflow
+
+Secuencia lógica de producción (ej. soldadura -> pintura -> montaje).
+
+4. Capacidad y Disponibilidad
+
+GET /capacity
+
+Query: ?from=2026-W01&to=2026-W10
+
+Response: Capacidad total y disponible por semana, área y puesto.
+
+GET /capacity/adjustments | PUT /capacity/adjustments
+
+Body (PUT): { "target_type": "station", "target_id": 1, "week": "2026-W08", "hours_deducted": 16, "reason": "breakdown" }
+
+PATCH /stations/:id/status
+
+Body: { "status": "active|stopped|maintenance" } (Actualiza el punto de estado en el plano).
+
+5. Pedidos (Órdenes de Fabricación)
+
+GET /orders | POST /orders
+
+Body (POST): { "client": "...", "project": "...", "quantity": 10, "delivery_week": "2026-W12", "lead_time_weeks": 2, "hours_per_unit": { "welding": 4, "painting": 1, "assembly": 2 } }
+
+GET /orders/:id | PATCH /orders/:id | DELETE /orders/:id
+
+POST /orders/import
+
+Content-Type: multipart/form-data (Excel).
+
+Response (202): Devuelve un pre-análisis de las filas importadas (validando "serie" y "restante") antes de confirmar.
+
+POST /orders/:id/confirm
+
+Fija el pedido en el calendario y resta la capacidad oficialmente.
+
+6. Motor de Cálculo y Simulación
+
+POST /simulations/evaluate
+
+Descripción: Evalúa un borrador de pedido mediante "backwards scheduling" respetando plazos previos.
+
+Response:
+
+{
+  "is_viable": false,
+  "bottlenecks": [
+    { "week": "2026-W10", "area": "soldadura", "missing_hours": 24 }
+  ],
+  "suggestions": [
+    { "id": "sug-1", "type": "delay", "proposed_delivery_week": "2026-W13" },
+    { "id": "sug-2", "type": "overtime", "area": "soldadura", "week": "2026-W10", "extra_hours_needed": 24 }
+  ]
+}
+
+
+POST /simulations/apply
+
+Body: { "suggestion_id": "sug-2", "order_data": {...} }
+
+7. Visualización y Monitorización (CORE UI)
+
+Nota para Backend: Estos endpoints son críticos de rendimiento. El servidor debe consolidar la información para que el frontend (Navegador/React/Vue) no haga cruces de arrays pesados.
+
+GET /plant-status
+
+Query: ?week=2026-W08
+
+Descripción: Alimenta el plano interactivo. Devuelve el estado exacto de cada puesto para pintar su barra de capacidad y porcentaje.
+
+Response:
+
+[
+  {
+    "station_id": 1,
+    "name": "Línea Soldadura 1",
+    "status": "active",
+    "metrics": {
+      "capacity_hours": 80,
+      "loaded_hours": 75,
+      "occupancy_percentage": 93.75, 
+      "alert_level": "amber" // green (<80%), amber (80-99%), red (>=100%)
+    },
+    "order_segments": [
+      { "order_id": 101, "client": "Cliente A", "hours": 40, "color": "#3498db" },
+      { "order_id": 105, "client": "Cliente B", "hours": 35, "color": "#e74c3c" }
+    ]
+  }
+]
+
+
+GET /heatmap
+
+Query: ?from=2026-W01&to=2026-W36
+
+Descripción: Alimenta la tira inferior de navegación.
+
+Response:
+
+[
+  { "week": "2026-W01", "global_occupancy": 65.5, "status": "green" },
+  { "week": "2026-W08", "global_occupancy": 105.0, "status": "red" }
+]
+
+
+WS /ws/plant
+
+Eventos emitidos: STATION_STATUS_CHANGED, CAPACITY_UPDATED, NEW_ORDER_CONFIRMED.
+
+Payload: Envía deltas (cambios) para actualizar el dashboard en tiempo real sin recargar.
