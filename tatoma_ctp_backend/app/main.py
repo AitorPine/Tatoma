@@ -1,10 +1,13 @@
 import csv
 import io
 import json
+import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import List, Optional
 from fastapi import APIRouter, Depends, FastAPI, File, HTTPException, Query, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPAuthorizationCredentials
 from openpyxl import load_workbook
 from sqlalchemy.orm import Session
@@ -13,6 +16,7 @@ from app.auth import (
     REVOKED_TOKENS,
     create_jwt_token,
     get_current_user,
+    get_refresh_user,
     hash_password,
     require_roles,
     security_scheme,
@@ -63,6 +67,13 @@ from app.ws_manager import ws_manager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    if os.getenv("APP_ENV", "development").lower() == "production":
+        required = ("TATOMA_SECRET_KEY", "TATOMA_ADMIN_PASSWORD", "TATOMA_PLANNER_PASSWORD", "TATOMA_VIEWER_PASSWORD")
+        missing = [name for name in required if not os.getenv(name)]
+        if missing:
+            raise RuntimeError(f"Faltan variables obligatorias para producción: {', '.join(missing)}")
+        if len(os.environ["TATOMA_SECRET_KEY"]) < 32:
+            raise RuntimeError("TATOMA_SECRET_KEY debe tener al menos 32 caracteres")
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
@@ -80,8 +91,8 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=[origin.strip() for origin in os.getenv("TATOMA_CORS_ORIGINS", "").split(",") if origin.strip()],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -107,7 +118,7 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/auth/refresh", response_model=TokenResponse, tags=["Autenticación"])
-def refresh_token(current_user: UserModel = Depends(get_current_user)):
+def refresh_token(current_user: UserModel = Depends(get_refresh_user)):
     new_access = create_jwt_token({"sub": current_user.username, "role": current_user.role})
     new_refresh = create_jwt_token({"sub": current_user.username, "role": current_user.role, "type": "refresh"})
     return TokenResponse(
@@ -1098,4 +1109,16 @@ async def websocket_plant_endpoint(websocket: WebSocket):
         ws_manager.disconnect(websocket)
 
 
+@app.get("/health", tags=["Sistema"])
+def health_check():
+    return {"status": "ok"}
+
+
 app.include_router(router)
+
+project_root = Path(__file__).resolve().parents[1]
+frontend_dir = Path(os.getenv("FRONTEND_DIR", project_root / "planta"))
+if not frontend_dir.is_dir():
+    frontend_dir = project_root.parent / "planta"
+if frontend_dir.is_dir():
+    app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")

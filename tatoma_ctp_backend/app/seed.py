@@ -1,4 +1,5 @@
 import json
+import os
 from sqlalchemy.orm import Session
 from app.auth import hash_password
 from app.models import (
@@ -19,9 +20,9 @@ def seed_initial_data(db: Session):
 
     # 1. Usuarios con roles: admin, planner, viewer
     users = [
-        UserModel(username="admin", password_hash=hash_password("admin123"), full_name="Administrador Planta", role="admin"),
-        UserModel(username="planner", password_hash=hash_password("planner123"), full_name="Planificador Producción", role="planner"),
-        UserModel(username="viewer", password_hash=hash_password("viewer123"), full_name="Consultor Nave", role="viewer"),
+        UserModel(username="admin", password_hash=hash_password(os.getenv("TATOMA_ADMIN_PASSWORD", "admin123")), full_name="Administrador Planta", role="admin"),
+        UserModel(username="planner", password_hash=hash_password(os.getenv("TATOMA_PLANNER_PASSWORD", "planner123")), full_name="Planificador Producción", role="planner"),
+        UserModel(username="viewer", password_hash=hash_password(os.getenv("TATOMA_VIEWER_PASSWORD", "viewer123")), full_name="Consultor Nave", role="viewer"),
     ]
     db.add_all(users)
 

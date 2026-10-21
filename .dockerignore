@@ -1,0 +1,8 @@
+.git
+.venv
+**/mi_entorno
+**/__pycache__
+**/*.py[cod]
+**/*.db
+.env
+**/.pytest_cache

@@ -1,0 +1,19 @@
+services:
+  tatoma:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      DATABASE_URL: sqlite:////data/tatoma_ctp.db
+      TATOMA_SECRET_KEY: ${TATOMA_SECRET_KEY:?Define TATOMA_SECRET_KEY in .env}
+      TATOMA_ADMIN_PASSWORD: ${TATOMA_ADMIN_PASSWORD:?Define TATOMA_ADMIN_PASSWORD in .env}
+      TATOMA_PLANNER_PASSWORD: ${TATOMA_PLANNER_PASSWORD:?Define TATOMA_PLANNER_PASSWORD in .env}
+      TATOMA_VIEWER_PASSWORD: ${TATOMA_VIEWER_PASSWORD:?Define TATOMA_VIEWER_PASSWORD in .env}
+      TATOMA_CORS_ORIGINS: ${TATOMA_CORS_ORIGINS:-}
+    volumes:
+      - tatoma_data:/data
+
+volumes:
+  tatoma_data:

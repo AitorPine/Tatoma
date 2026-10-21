@@ -8,7 +8,8 @@ Backend completo agnóstico al sector (preconfigurado con el caso Grupo Tatoma -
 - Integración con **IA Local (Ollama)** con fallback determinista automático si Ollama no está corriendo.
 - Notificaciones en tiempo real mediante **WebSockets** (`/api/v1/ws/plant` y `/ws/plant`).
 
-## Credenciales por defecto (Seed SQLite)
-- **Administrador:** `usuario: admin` | `password: admin123`
-- **Planificador:** `usuario: planner` | `password: planner123`
-- **Visualizador:** `usuario: viewer` | `password: viewer123`
+## Ejecución y despliegue
+
+La guía de desarrollo y despliegue (incluidos Docker, variables de entorno, persistencia y acceso remoto) está en el [README del repositorio](../README.md).
+
+En desarrollo, el seed inicial usa `admin/admin123`, `planner/planner123` y `viewer/viewer123` por defecto. En producción, configura las variables `TATOMA_ADMIN_PASSWORD`, `TATOMA_PLANNER_PASSWORD` y `TATOMA_VIEWER_PASSWORD` antes de crear la base de datos. Esas contraseñas solo se usan al inicializar una base vacía.
