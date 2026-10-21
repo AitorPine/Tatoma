@@ -1,0 +1,115 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Planta · Carga y capacidad</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e4e6e1;--pn:#f5f5f1;--ink:#1c2227;--mut:#5d686f;--ln:#b7bdc0;--trk:#d3d7d6;--ac:#2b5d8a;--ok:#2e9d5b;--wn:#e0a100;--er:#d33a3a;--so:#5b6f8a;--pi:#7a5ea8;--mo:#2f8a8a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14181b;--pn:#1d2327;--ink:#e6e9ea;--mut:#98a3a9;--ln:#3a444a;--trk:#2a3237;--ac:#6aa6d8;--so:#8aa0bd;--pi:#a58bd6;--mo:#4fb5b5;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14181b;--pn:#1d2327;--ink:#e6e9ea;--mut:#98a3a9;--ln:#3a444a;--trk:#2a3237;--ac:#6aa6d8;--so:#8aa0bd;--pi:#a58bd6;--mo:#4fb5b5;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:500 15px/1.35 "Barlow Semi Condensed",system-ui,sans-serif}
+button,input,select{font:inherit;color:inherit}button{cursor:pointer}
+.hd{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:12px 18px;border-bottom:2px solid var(--ink);background:var(--pn)}
+.hd h1{font-size:22px;margin:0;font-weight:700;letter-spacing:.01em}.sp{flex:1}
+.tabs button,.b{border:1.5px solid var(--ink);background:transparent;padding:6px 13px;border-radius:2px}
+.tabs button.on,.b.p{background:var(--ink);color:var(--bg)}.b.d{border-color:var(--er);color:var(--er)}
+main{padding:16px 18px;max-width:1280px;margin:auto}
+.wk{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}.wk h2{margin:0;font-size:20px}
+.strip{display:flex;gap:2px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px}
+.strip button{flex:0 0 18px;height:22px;border:0;border-radius:1px;font-size:10px;color:#fff;padding:0}.strip .cur{outline:2px solid var(--ink);outline-offset:1px}
+.ok{--c:var(--ok)}.wn{--c:var(--wn)}.er{--c:var(--er)}.strip .ok{background:var(--ok)}.strip .wn{background:var(--wn)}.strip .er{background:var(--er)}
+.areas{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.chip{padding:5px 11px;background:var(--pn);border-left:5px solid var(--c);border-radius:2px}
+.scroll{overflow-x:auto;background-image:linear-gradient(var(--ln) 1px,transparent 1px),linear-gradient(90deg,var(--ln) 1px,transparent 1px);background-size:24px 24px;border:2px solid var(--ink);background-color:var(--pn);padding:12px}
+.plan{display:grid;gap:10px;grid-auto-rows:minmax(96px,auto);min-width:640px}
+.st{background:var(--pn);border:1.5px solid var(--ink);border-top:6px solid var(--c);border-left:6px solid var(--a);padding:8px 10px;display:flex;flex-direction:column;gap:5px;min-width:0;cursor:pointer}
+.st.sel{outline:3px solid var(--ac)}.st .top{display:flex;justify-content:space-between;gap:6px;align-items:center}.top b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meta{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:13px;color:var(--mut)}.meta em{font-style:normal;color:var(--c);font-weight:700}
+.dot{width:13px;height:13px;border-radius:50%;flex:none;border:1.5px solid var(--ink)}.dot.act{background:var(--ok)}.dot.parada{background:var(--er)}.dot.mant{background:#e8902c}
+.bar{position:relative;display:flex;height:16px;margin-top:auto;background:var(--trk);transform:skewX(-22deg);box-shadow:0 4px 0 rgba(0,0,0,.28);margin-right:8px}
+.bar i{display:block;height:100%;border-right:1px solid var(--pn)}.bar u{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink)}
+.empty{border:1.5px dashed var(--mut);background:transparent;color:var(--mut);font-size:22px}
+.pn,.card{background:var(--pn);border:1.5px solid var(--ink);padding:14px;margin-top:14px}
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+label{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--mut)}
+input,select{background:var(--bg);border:1.5px solid var(--ln);padding:6px 8px;border-radius:2px;min-width:0}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--ln)}th{color:var(--mut);font-weight:600}
+.g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}.tw{overflow-x:auto}
+.res{border-left:6px solid var(--c);padding:8px 12px;margin-top:12px;background:var(--bg)}.res li{margin:5px 0}
+.lg{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--mut);margin-top:10px;align-items:center}.lg i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:4px;vertical-align:-2px;border:1.5px solid var(--ink)}
+.login{max-width:340px;margin:12vh auto;padding:0 18px}.login .card{display:grid;gap:12px}
+:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+</style></head><body><div id="app"></div>
+<script>
+const AR=['soldadura','pintura','montaje'],AC={soldadura:'--so',pintura:'--pi',montaje:'--mo'},SL={act:'Activa',parada:'Parada',mant:'En mantenimiento'};
+const USERS={admin:['admin','admin'],planner:['planner','planificador']};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const $=s=>document.querySelector(s),col=i=>`hsl(${(i*57+20)%360} 48% 52%)`;
+let S,U=null,edit=false,sel=null,view='planta';
+function seed(){let id=1,st=[];
+for(let i=0;i<7;i++)st.push({id:id++,name:'Soldadura L'+(i+1),area:'soldadura',x:i,y:0,w:1,h:1,workers:3,shifts:1,hps:8,status:'act'});
+st.push({id:id++,name:'Cabina pintura 1',area:'pintura',x:1,y:2,w:2,h:1,workers:3,shifts:1,hps:8,status:'act'},{id:id++,name:'Cabina pintura 2',area:'pintura',x:4,y:2,w:2,h:1,workers:3,shifts:1,hps:8,status:'act'});
+for(let i=0;i<4;i++)st.push({id:id++,name:'Montaje '+'ABCD'[i],area:'montaje',x:i*2,y:4,w:2,h:1,workers:4,shifts:1,hps:8,status:i==3?'mant':'act'});
+const O=(of,cli,q,hs,hp,hm,d)=>({of,cli,q,hs,hp,hm,d,lead:1});
+return{week:8,g:{c:8,r:5},st,adj:{},team:[],or:[O('P460 OF10458','VW NAVARRA',306,6.5,.35,2,14),O('P460 OF10459','VW NAVARRA',306,6.5,.35,2,16),O('P388 OF8506','SEAT',120,4.5,.35,6,10),O('P387 OF15163','SEAT',107,6,.35,6,9),O('OF25190','CORREOS',300,3,.5,4.5,20),O('P390 OF14773','NEOLITHS',252,1,.25,.5,18),O('P240 OF15168','REPSOL',725,3.75,0,.75,25),O('P279 OF16029','BADDER SPAIN',32,14,0,1.25,12)]}}
+const sv=()=>{try{localStorage.setItem('pl1',JSON.stringify(S))}catch(e){}};
+try{S=JSON.parse(localStorage.getItem('pl1'))}catch(e){}const DEF=()=>[{n:'Soldadura',a:'soldadura',k:'hs',f:5,t:2},{n:'Pintura',a:'pintura',k:'hp',f:2,t:1},{n:'Montaje',a:'montaje',k:'hm',f:0,t:0}];S=S||seed();S.flow=S.flow||DEF();
+/* motor de cálculo */
+function spread(o){const d=o.d,L=o.lead||1,r={soldadura:{},pintura:{},montaje:{}};
+const add=(a,ws,h)=>{ws=ws.filter(w=>w>=Math.max(L,1));if(!ws.length)ws=[Math.max(L,1)];ws.forEach(w=>r[a][w]=(r[a][w]||0)+h/ws.length)};
+S.flow.forEach(p=>{const ws=[];for(let k=p.f;k>=p.t;k--)ws.push(d-k);add(p.a,ws,o.q*(o[p.k]||0))});return r}
+const stCap=s=>s.status==='parada'?0:s.workers*s.shifts*s.hps*5*(s.status==='mant'?.5:1);
+const aSt=a=>S.st.filter(s=>s.area===a),aRaw=a=>aSt(a).reduce((t,s)=>t+stCap(s),0);
+const aCap=(a,w)=>Math.max(0,aRaw(a)-(S.adj[w+'|'+a]||0));
+const load=(a,w,os)=>os.reduce((t,o)=>t+(spread(o)[a][w]||0),0);
+const pct=(c,l)=>c>0?l/c:(l>0?9.99:0),cls=p=>p>1?'er':p>=.8?'wn':'ok';
+function sl(s,w){const a=s.area,raw=aRaw(a),n=aSt(a).length,sh=raw?stCap(s)/raw:1/n;
+return{cap:aCap(a,w)*sh,load:load(a,w,S.or)*sh,segs:S.or.map((o,i)=>({o,i,h:(spread(o)[a][w]||0)*sh})).filter(x=>x.h>0)}}
+function ev(o,os){const sp=spread(o),c=[];if((o.lead||1)>=o.d)c.push({w:o.d,a:'plazo previo',x:0,free:0});
+AR.forEach(a=>Object.entries(sp[a]).forEach(([w,h])=>{w=+w;const f=aCap(a,w)-load(a,w,os);if(h>f+1e-6)c.push({w,a,x:Math.ceil(h-f),free:Math.max(0,Math.floor(f))})}));return c}
+/* vistas */
+const at=(x,y)=>S.st.find(s=>x>=s.x&&x<s.x+s.w&&y>=s.y&&y<s.y+s.h),adm=()=>U&&U.r==='admin';
+function vPlanta(){const w=S.week,rs=S.st.map(s=>sl(s,w)),mx=Math.max(1,...rs.map(r=>Math.max(r.cap,r.load)));
+const strip=Array.from({length:36},(_,i)=>{const k=i+1,p=Math.max(...AR.map(a=>pct(aCap(a,k),load(a,k,S.or))));return`<button class="${cls(p)} ${k==w?'cur':''}" onclick="gw(${k})" title="Semana ${k}: ${Math.round(p*100)}%">${k}</button>`}).join('');
+const chips=AR.map(a=>{const p=pct(aCap(a,w),load(a,w,S.or));return`<div class="chip ${cls(p)}"><b>${a}</b> ${Math.round(load(a,w,S.or))} de ${Math.round(aCap(a,w))} h · <b style="color:var(--c)">${Math.round(p*100)}%</b></div>`}).join('');
+let cells='';if(edit)for(let y=0;y<S.g.r;y++)for(let x=0;x<S.g.c;x++)if(!at(x,y))cells+=`<button class="empty" style="grid-column:${x+1};grid-row:${y+1}" onclick="addSt(${x},${y})" aria-label="Añadir puesto">+</button>`;
+const cards=S.st.map((s,i)=>{const r=rs[i],p=pct(r.cap,r.load);return`<div class="st ${cls(p)} ${sel==s.id&&edit?'sel':''}" style="grid-column:${s.x+1}/span ${s.w};grid-row:${s.y+1}/span ${s.h};--a:var(${AC[s.area]})" onclick="pick(${s.id})"><div class="top"><b>${esc(s.name)}</b><span class="dot ${s.status}" title="${SL[s.status]}"></span></div><div class="meta"><span>${s.workers} operarios</span><span>${Math.round(r.load)} / ${Math.round(r.cap)} h</span><em>${Math.round(p*100)}%</em></div><div class="bar">${r.segs.map(g=>`<i style="width:${g.h/mx*100}%;background:${col(g.i)}" title="${esc(g.o.cli)} ${esc(g.o.of)}: ${Math.round(g.h)} h"></i>`).join('')}<u style="left:${Math.min(100,r.cap/mx*100)}%" title="Capacidad"></u></div></div>`}).join('');
+const wo=S.or.map((o,i)=>({o,i,h:AR.reduce((t,a)=>t+(spread(o)[a][w]||0),0)})).filter(x=>x.h>0);
+return`<div class="wk"><button class="b" onclick="gw(${w-1})">◀</button><h2>Semana ${w}</h2><button class="b" onclick="gw(${w+1})">▶</button><div class="sp"></div>${U.r!='consulta'?'<button class="b" onclick="adjCap()">Ajustar capacidad</button>':''}${adm()?`<button class="b ${edit?'p':''}" onclick="edit=!edit;sel=null;draw()">${edit?'Terminar edición':'Editar plano'}</button>`:''}</div>
+<div class="strip" aria-label="Ocupación máxima por semana">${strip}</div><div class="areas">${chips}</div>
+<div class="scroll"><div class="plan" style="grid-template-columns:repeat(${S.g.c},minmax(0,1fr))">${cells}${cards}</div></div>
+<div class="lg"><span><i style="background:var(--ok)"></i>Activa</span><span><i style="background:var(--er)"></i>Parada</span><span><i style="background:#e8902c"></i>Mantenimiento</span><span>Borde: verde &lt;80 %, ámbar ≥80 %, rojo &gt;100 %</span><span>La barra se divide por pedido; la marca negra es la capacidad.</span></div>
+<div class="lg">${wo.map(x=>`<span><i style="background:${col(x.i)}"></i>${esc(x.o.cli)} ${esc(x.o.of)} · ${Math.round(x.h)} h</span>`).join('')||'Sin carga esta semana.'}</div>${panel()}`}
+function panel(){const s=S.st.find(x=>x.id===sel);let h='';if(edit)h+=`<section class="pn"><div class="fg"><label>Columnas<input type="number" value="${S.g.c}" min="1" max="20" onchange="S.g.c=+this.value;sv();draw()"></label><label>Filas<input type="number" value="${S.g.r}" min="1" max="20" onchange="S.g.r=+this.value;sv();draw()"></label></div><p class="lg">Pulsa + para crear un puesto y un puesto para editarlo.</p></section>`;
+if(!edit||!s)return h;const f=(k,l)=>`<label>${l}<input type="number" min="0" value="${s[k]}" onchange="up('${k}',+this.value)"></label>`;
+return h+`<section class="pn"><div class="fg"><label>Nombre<input value="${esc(s.name)}" onchange="up('name',this.value)"></label><label>Área<select onchange="up('area',this.value)">${AR.map(a=>`<option ${a==s.area?'selected':''}>${a}</option>`).join('')}</select></label><label>Estado<select onchange="up('status',this.value)">${Object.entries(SL).map(([k,v])=>`<option value="${k}" ${k==s.status?'selected':''}>${v}</option>`).join('')}</select></label>${f('workers','Operarios')}${f('shifts','Turnos')}${f('hps','Horas por turno')}${f('w','Ancho (celdas)')}${f('h','Alto (celdas)')}</div><p><button class="b d" onclick="delSt()">Eliminar puesto</button></p></section>`}
+function vPed(){const ro=U.r=='consulta';return`<div class="g2"><div class="card tw"><h2>Pedidos comprometidos</h2><table><tr><th>OF</th><th>Cliente</th><th>Uds</th><th>Entrega</th><th>h/ud S·P·M</th><th></th></tr>${S.or.map((o,i)=>`<tr><td>${esc(o.of)}</td><td>${esc(o.cli)}</td><td>${o.q}</td><td>sem ${o.d}</td><td>${o.hs}·${o.hp}·${o.hm}</td><td>${ro?'':`<button class="b d" onclick="S.or.splice(${i},1);sv();draw()">Quitar</button>`}</td></tr>`).join('')}</table></div>
+<div class="card"><h2>Evaluar pedido nuevo</h2><div class="fg"><label>OF<input id="fof" value="NUEVO"></label><label>Cliente<input id="fcli" value="Cliente"></label><label>Cantidad<input id="fq" type="number" value="100"></label><label>Semana de entrega<input id="fd" type="number" value="20"></label><label>Horas soldadura/ud<input id="fhs" type="number" step=".05" value="4"></label><label>Horas pintura/ud<input id="fhp" type="number" step=".05" value=".35"></label><label>Horas montaje/ud<input id="fhm" type="number" step=".05" value="1.5"></label><label>Soldar no antes de sem.<input id="fl" type="number" value="1"></label></div><p><button class="b p" onclick="evalo()">Evaluar viabilidad</button></p><div id="res"></div></div></div>`}
+function vTeam(){const o=S.st.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('');return`<div class="card tw"><h2>Equipo</h2><div class="fg"><label>Nombre<input id="wn"></label><label>Puesto<select id="ws">${o}</select></label><label>&nbsp;<button class="b p" onclick="addW()">Añadir trabajador</button></label></div><table><tr><th>Nombre</th><th>Puesto</th><th></th></tr>${S.team.map((t,i)=>`<tr><td>${esc(t.n)}</td><td><select onchange="mvW(${i},+this.value)">${S.st.map(s=>`<option value="${s.id}" ${s.id==t.sid?'selected':''}>${esc(s.name)}</option>`).join('')}</select></td><td><button class="b d" onclick="delW(${i})">Quitar</button></td></tr>`).join('')}</table></div>`}
+const FK={hs:'Horas de soldadura',hp:'Horas de pintura',hm:'Horas de montaje'},wl=k=>k?`d−${k}`:'d';
+function vFlow(){const sx=(i,k,o,v)=>`<select onchange="fl(${i},'${k}',this.value)">${o.map(([a,b])=>`<option value="${a}" ${a==v?'selected':''}>${b}</option>`).join('')}</select>`,nm=(i,k,v)=>`<input type="number" min="0" max="20" value="${v}" onchange="fl(${i},'${k}',+this.value)">`;
+return`<div class="card tw"><h2>Flujo de trabajo</h2><p class="lg">Cada fase reparte su carga a partes iguales entre las semanas indicadas, contadas hacia atrás desde la entrega (d). Con 0 y 0 la fase cae en la semana de entrega.</p><table><tr><th>Orden</th><th>Fase</th><th>Área</th><th>Horas por unidad</th><th>Desde (sem. antes)</th><th>Hasta (sem. antes)</th><th>Semanas</th><th></th></tr>${S.flow.map((p,i)=>`<tr><td><button class="b" onclick="mvFl(${i},-1)" aria-label="Subir">▲</button> <button class="b" onclick="mvFl(${i},1)" aria-label="Bajar">▼</button></td><td><input value="${esc(p.n)}" onchange="fl(${i},'n',this.value)"></td><td>${sx(i,'a',AR.map(a=>[a,a]),p.a)}</td><td>${sx(i,'k',Object.entries(FK),p.k)}</td><td>${nm(i,'f',p.f)}</td><td>${nm(i,'t',p.t)}</td><td>${wl(p.f)}${p.f==p.t?'':' a '+wl(p.t)}</td><td><button class="b d" onclick="delFl(${i})">Quitar</button></td></tr>`).join('')}</table><p><button class="b p" onclick="addFl()">Añadir fase</button> <button class="b" onclick="S.flow=DEF();sv();draw()">Restaurar flujo inicial</button></p></div>`}
+function fl(i,k,v){const p=S.flow[i];p[k]=v;if(k=='f'&&p.f<p.t)p.t=p.f;if(k=='t'&&p.t>p.f)p.f=p.t;sv();draw()}
+function mvFl(i,d){const j=i+d;if(j<0||j>=S.flow.length)return;[S.flow[i],S.flow[j]]=[S.flow[j],S.flow[i]];sv();draw()}
+const addFl=()=>{S.flow.push({n:'Fase nueva',a:'montaje',k:'hm',f:1,t:1});sv();draw()},delFl=i=>{S.flow.splice(i,1);sv();draw()};
+function draw(){const a=$('#app');if(!U){a.innerHTML=`<div class="login"><h1>Planta</h1><div class="card"><label>Usuario<input id="lu" autocomplete="username"></label><label>Contraseña<input id="lp" type="password" autocomplete="current-password" onkeydown="event.key=='Enter'&&login()"></label><button class="b p" onclick="login()">Entrar</button><span id="le" style="color:var(--er)"></span><small style="color:var(--mut)">Prueba con admin / admin o planner / planner.</small></div></div>`;return}
+a.innerHTML=`<header class="hd"><h1>Planta · carga y capacidad</h1><nav class="tabs"><button class="${view=='planta'?'on':''}" onclick="view='planta';draw()">Plano</button><button class="${view=='ped'?'on':''}" onclick="view='ped';draw()">Pedidos</button>${adm()?`<button class="${view=='team'?'on':''}" onclick="view='team';draw()">Equipo</button><button class="${view=='flow'?'on':''}" onclick="view='flow';draw()">Flujo</button>`:''}</nav><div class="sp"></div><span>${esc(U.n)} · ${U.r}</span><button class="b" onclick="U=null;draw()">Salir</button></header><main>${view=='planta'?vPlanta():view=='ped'?vPed():view=='flow'&&adm()?vFlow():vTeam()}</main>`}
+/* acciones */
+function login(){const u=USERS[$('#lu').value.trim()];if(u&&u[0]===$('#lp').value){U={n:$('#lu').value.trim(),r:u[1]=='planificador'?'planner':'admin'};draw()}else $('#le').textContent='Usuario o contraseña incorrectos.'}
+const gw=w=>{S.week=Math.min(52,Math.max(1,w));sv();draw()},pick=id=>{if(edit){sel=id;draw()}};
+function addSt(x,y){const id=Math.max(0,...S.st.map(s=>s.id))+1;S.st.push({id,name:'Puesto nuevo',area:'soldadura',x,y,w:1,h:1,workers:1,shifts:1,hps:8,status:'act'});sel=id;sv();draw()}
+function up(k,v){const s=S.st.find(x=>x.id===sel);s[k]=v;sv();draw()}
+function delSt(){S.st=S.st.filter(s=>s.id!==sel);sel=null;sv();draw()}
+function adjCap(){const a=prompt('Área a ajustar: soldadura, pintura o montaje');if(!AR.includes(a))return;const h=+prompt(`Horas a restar en la semana ${S.week} (vacaciones, bajas, avería). Usa 0 para quitar el ajuste.`);if(isNaN(h))return;S.adj[S.week+'|'+a]=h;sv();draw()}
+function addW(){const n=$('#wn').value.trim(),sid=+$('#ws').value;if(!n)return;S.team.push({n,sid});S.st.find(s=>s.id==sid).workers++;sv();draw()}
+function delW(i){const t=S.team.splice(i,1)[0],s=S.st.find(x=>x.id==t.sid);if(s)s.workers=Math.max(0,s.workers-1);sv();draw()}
+function mvW(i,sid){const t=S.team[i],a=S.st.find(x=>x.id==t.sid),b=S.st.find(x=>x.id==sid);if(a)a.workers=Math.max(0,a.workers-1);b.workers++;t.sid=sid;sv();draw()}
+const fv=k=>+$('#f'+k).value;
+function evalo(){const o={of:$('#fof').value,cli:$('#fcli').value,q:fv('q'),d:fv('d'),hs:fv('hs'),hp:fv('hp'),hm:fv('hm'),lead:fv('l')},c=ev(o,S.or),sg=[];
+if(c.length){for(let k=1;k<=12;k++)if(!ev({...o,d:o.d+k},S.or).length){sg.push(`Retrasar la entrega a la semana ${o.d+k}.<button class="b" onclick="ap('d',${o.d+k})">Aplicar</button>`);break}
+let q=o.q;while(q>0&&ev({...o,q},S.or).length)q--;if(q>0&&q<o.q)sg.push(`Entregar ${q} uds en la semana ${o.d} y las ${o.q-q} restantes después.<button class="b" onclick="ap('q',${q})">Aplicar</button>`);
+c.filter(x=>x.x).slice(0,3).forEach(x=>sg.push(`Cubrir ${x.x} h extra de ${x.a} en la semana ${x.w}, unos ${Math.ceil(x.x/8)} turnos de 8 h adicionales.`));
+if(c.some(x=>x.a=='plazo previo'))sg.push('Reducir el plazo previo o ampliar la fecha de entrega.')}
+$('#res').innerHTML=c.length?`<div class="res er"><b>No es viable.</b> Cuellos de botella:<ul>${c.map(x=>x.a=='plazo previo'?`<li>El plazo previo termina en la semana ${o.lead}, sin margen antes de la entrega (sem ${o.d}).</li>`:`<li>Semana ${x.w} · ${x.a}: faltan ${x.x} h (libres ${x.free} h).</li>`).join('')}</ul><b>Sugerencias</b><ul>${sg.map(s=>`<li>${s}</li>`).join('')}</ul></div>`:`<div class="res ok"><b>Viable.</b> Hay capacidad libre en todas las semanas afectadas. ${U.r!='consulta'?'<button class="b p" onclick="acc()">Aceptar pedido</button>':''}</div>`;window._o=o}
+const ap=(k,v)=>{$('#f'+k).value=v;evalo()};
+function acc(){S.or.push(window._o);sv();draw()}
+draw();
+</script></body></html>
