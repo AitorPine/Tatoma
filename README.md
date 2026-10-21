@@ -5,33 +5,37 @@ Aplicación web para planificar pedidos de fabricación, detectar cuellos de bot
 ## Requisitos
 
 - Python 3.13 recomendado (compatible con las dependencias fijadas).
-- Docker Engine y Docker Compose para el despliegue.
 
-## Desarrollo local
+## Instalación y ejecución
 
-Desde la raíz del repositorio:
+Desde la raíz del repositorio, en PowerShell:
 
-```bash
+```powershell
 cd tatoma_ctp_backend
-python3 -m venv .venv
-. .venv/bin/activate
-pip install -r requirements.txt
-export TATOMA_SECRET_KEY="$(python -c 'import secrets; print(secrets.token_urlsafe(48))')"
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+py -3.13 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-Abre `http://127.0.0.1:8000`. FastAPI sirve tanto la aplicación como `/api/v1`; no hace falta iniciar un servidor frontend aparte. La base local `tatoma_ctp.db` se crea al iniciar. En la primera ejecución se crean los usuarios `admin`, `planner` y `viewer`, con contraseñas de desarrollo `admin123`, `planner123` y `viewer123` si no se han definido variables de entorno.
+En Linux o macOS, activa el entorno con `source .venv/bin/activate` después de crearlo con `python3 -m venv .venv`; el resto de comandos es igual.
 
-## Despliegue fuera de localhost
+Abre `http://127.0.0.1:8000`. Uvicorn ejecuta FastAPI, que sirve tanto la aplicación como `/api/v1`; no hace falta iniciar un servidor frontend aparte. Ejecuta el comando desde `tatoma_ctp_backend`: la base local `tatoma_ctp.db` se crea allí al iniciar. En la primera ejecución se crean los usuarios `admin`, `planner` y `viewer`, con contraseñas de desarrollo `admin123`, `planner123` y `viewer123` si no se han definido variables de entorno.
 
-1. Copia `.env.example` a `.env` y configura contraseñas fuertes y una clave JWT aleatoria de al menos 32 caracteres. No publiques el archivo `.env`.
-2. Inicia el servicio:
+## Ejecución en un servidor
 
-```bash
-docker compose up --build -d
+Para aceptar conexiones externas, configura las variables de entorno antes de iniciar Uvicorn. En PowerShell:
+
+```powershell
+$env:APP_ENV = "production"
+$env:TATOMA_SECRET_KEY = (python -c "import secrets; print(secrets.token_urlsafe(48))")
+$env:TATOMA_ADMIN_PASSWORD = "<contraseña-fuerte>"
+$env:TATOMA_PLANNER_PASSWORD = "<contraseña-fuerte>"
+$env:TATOMA_VIEWER_PASSWORD = "<contraseña-fuerte>"
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-3. Abre `http://<IP-o-dominio-del-servidor>:8000`. El contenedor escucha en `0.0.0.0`; `PORT` cambia el puerto publicado. Los datos sobreviven a recreaciones del contenedor en el volumen `tatoma_data`.
+Usa contraseñas fuertes y no compartas la clave ni las contraseñas. En Linux o macOS, define las mismas variables con `export VARIABLE=valor`. La clave JWT debe tener al menos 32 caracteres.
 
 En producción, publica el servicio detrás de un proxy HTTPS y configura el proxy para admitir WebSockets en `/api/v1/ws/plant`. Si frontend y API se alojan en orígenes diferentes, define `TATOMA_CORS_ORIGINS` con una lista separada por comas y configura `window.TATOMA_API_URL` antes de cargar `planta/js/config.js`. La misma URL relativa funciona automáticamente cuando se sirven desde el mismo origen.
 

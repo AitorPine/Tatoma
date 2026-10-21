@@ -2,6 +2,7 @@ import csv
 import io
 import json
 import os
+import re
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import List, Optional
@@ -61,7 +62,8 @@ from app.schemas import (
 from app.seed import seed_initial_data
 from app.services.ai_local import evaluate_with_local_ai
 from app.services.engine import IndustrialPlanningEngine
-from app.utils_weeks import format_week, generate_week_range, parse_week
+from app.services.excel_import import parse_commercial_workbook
+from app.utils_weeks import format_week, generate_week_range, parse_week, shift_week
 from app.ws_manager import ws_manager
 
 
@@ -803,6 +805,51 @@ async def import_orders_excel(
     Cabeceras soportadas: code, client, quantity, delivery_week, lead_time_weeks, required_skill, soldadura, pintura, montaje
     """
     content = await file.read()
+    commercial_orders, commercial_errors = (
+        parse_commercial_workbook(content)
+        if file.filename and file.filename.lower().endswith(".xlsx")
+        else (None, [])
+    )
+
+    if commercial_orders is not None:
+        imported = []
+        errors = list(commercial_errors)
+        for item in commercial_orders:
+            try:
+                with db.begin_nested():
+                    existing = db.query(OrderModel).filter(OrderModel.code == item["code"]).first()
+                    if existing:
+                        db.query(OrderAllocationModel).filter(OrderAllocationModel.order_id == existing.id).delete()
+                        order = existing
+                    else:
+                        order = OrderModel(code=item["code"], client="")
+                        db.add(order)
+
+                    order.client = f"{item['client']} - {item['project']}" if item["project"] else item["client"]
+                    order.quantity = item["quantity"]
+                    order.current_week = shift_week(item["delivery_week"], -4)
+                    order.delivery_week = item["delivery_week"]
+                    order.lead_time_weeks = item["lead_time_weeks"]
+                    order.required_skill = item["required_skill"]
+                    order.hours_per_unit_json = json.dumps(item["hours_per_unit"])
+                    order.active_phases_json = json.dumps(item["active_phases"])
+                    order.status = "confirmed"
+                    db.flush()
+                    _allocate_commercial_order(order, item, db)
+                imported.append(item["code"])
+            except Exception as error:
+                errors.append({"row": item["row"], "error": str(error)})
+
+        db.commit()
+        await ws_manager.broadcast("orders_imported", {"imported_count": len(imported)})
+        return {
+            "imported_count": len(imported),
+            "imported_codes": imported,
+            "errors": errors,
+            "source_rows": len({item["row"] for item in commercial_orders}),
+            "independent_weekly_orders": True,
+        }
+
     rows_data = []
 
     if file.filename and file.filename.lower().endswith(".csv"):
@@ -878,6 +925,84 @@ async def import_orders_excel(
     db.commit()
     await ws_manager.broadcast("orders_imported", {"imported_count": len(imported)})
     return {"imported_count": len(imported), "imported_codes": imported, "errors": errors}
+
+
+def _allocate_commercial_order(order: OrderModel, item: dict, db: Session):
+    engine = IndustrialPlanningEngine(db)
+    order_data = OrderCreate(
+        code=order.code,
+        client=order.client,
+        quantity=order.quantity,
+        current_week=order.current_week,
+        delivery_week=order.delivery_week,
+        lead_time_weeks=order.lead_time_weeks,
+        required_skill=order.required_skill,
+        hours_per_unit=item["hours_per_unit"],
+        active_phases=item["active_phases"],
+        status=order.status,
+    )
+    requested_lines = {
+        f"P{number}"
+        for number in re.findall(r"P\s*([1-7])", item["production_line"], flags=re.IGNORECASE)
+    }
+
+    for step in engine.get_active_workflow_steps(order_data):
+        phase_week = shift_week(order.delivery_week, -step.offset_weeks_before_delivery)
+        if step.area_id == "soldadura" and requested_lines:
+            stations = [station for station in engine.stations if station.id.upper() in requested_lines]
+        else:
+            stations = engine.get_compatible_stations(step.area_id, order.required_skill)
+        if not stations:
+            continue
+
+        hours_per_unit = item["hours_per_unit"].get(step.area_id, 0.0)
+        remaining_hours = round(order.quantity * hours_per_unit, 2)
+        station_loads = []
+        for station in stations:
+            capacity, max_units = engine.get_station_net_capacity(station, phase_week)
+            committed, committed_units = engine.get_station_committed_load(station.id, phase_week)
+            free_hours = max(0.0, capacity - committed)
+            if max_units is not None:
+                free_hours = min(
+                    free_hours,
+                    max(0.0, max_units - committed_units) * hours_per_unit,
+                )
+            station_loads.append((station, free_hours, capacity))
+        station_loads.sort(key=lambda entry: entry[1], reverse=True)
+
+        allocations = []
+        for station, free_hours, _ in station_loads:
+            if remaining_hours <= 0:
+                break
+            allocated_hours = round(min(remaining_hours, free_hours), 2)
+            if allocated_hours > 0:
+                allocations.append((station, allocated_hours))
+                remaining_hours = round(remaining_hours - allocated_hours, 2)
+
+        if remaining_hours > 0:
+            target_station = max(station_loads, key=lambda entry: entry[2])[0]
+            for index, (station, allocated_hours) in enumerate(allocations):
+                if station.id == target_station.id:
+                    allocations[index] = (station, round(allocated_hours + remaining_hours, 2))
+                    break
+            else:
+                allocations.append((target_station, remaining_hours))
+
+        for station, allocated_hours in allocations:
+            db.add(
+                OrderAllocationModel(
+                    order_id=order.id,
+                    order_code=order.code,
+                    client=order.client,
+                    week=phase_week,
+                    area=step.area_id,
+                    station_id=station.id,
+                    allocated_hours=allocated_hours,
+                    allocated_units=round(allocated_hours / hours_per_unit, 2) if hours_per_unit else 0,
+                    is_subcontracted=False,
+                )
+            )
+    db.flush()
 
 
 # =====================================================================
